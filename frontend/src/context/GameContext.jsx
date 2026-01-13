@@ -38,20 +38,24 @@ export const GameProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    const fetchUser = async () => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                const res = await api.get('/users/me');
+                setUser(res.data);
+            } catch (err) {
+                console.error("Auth Failed - Token Invalid", err);
+                localStorage.removeItem('token');
+                setUser(null);
+            }
+        }
+    };
+
     // Initial Load - Check Token
     useEffect(() => {
         const init = async () => {
-            const token = localStorage.getItem('token');
-            if (token) {
-                try {
-                    const res = await api.get('/users/me');
-                    setUser(res.data);
-                } catch (err) {
-                    console.error("Auth Failed - Token Invalid", err);
-                    localStorage.removeItem('token');
-                    setUser(null);
-                }
-            }
+            await fetchUser();
             // Always fetch levels (Public Data)
             await fetchLevels();
             setLoading(false);
@@ -189,6 +193,31 @@ export const GameProvider = ({ children }) => {
         return levelId === 1 ? 'unlocked' : 'locked';
     };
 
+    const getStoreItems = async () => {
+        try {
+            const res = await api.get('/store/items');
+            return res.data;
+        } catch (err) {
+            console.error("Store Fetch Error:", err);
+            return [];
+        }
+    };
+
+    const buyItem = async (itemId) => {
+        try {
+            const res = await api.post('/store/buy', { item_id: itemId });
+            // Refresh user to get new balance
+            await fetchUser();
+            return { success: true, message: res.data.message };
+        } catch (err) {
+            console.error("Purchase Error:", err);
+            return { 
+                success: false, 
+                message: err.response?.data?.detail || "Purchase failed" 
+            };
+        }
+    };
+
     return (
         <GameContext.Provider value={{
             user,
@@ -201,7 +230,10 @@ export const GameProvider = ({ children }) => {
             verifyTask,
             updateProgress,
             getLevelStatus,
-            fetchLeaderboard
+            fetchLeaderboard,
+            getStoreItems,
+            buyItem,
+            fetchUser // Expose fetchUser for manual refresh if needed
         }}>
             {children}
         </GameContext.Provider>

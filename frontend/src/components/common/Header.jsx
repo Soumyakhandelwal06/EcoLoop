@@ -1,5 +1,5 @@
 import React from 'react';
-import { Leaf, Coins, Flame, LogOut, Trophy } from 'lucide-react';
+import { Leaf, Coins, Flame, LogOut, Trophy, ShoppingBag } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGame } from '../../context/GameContext';
 
@@ -44,6 +44,11 @@ const Header = () => {
                         {/* Leaderboard Link */}
                         <Link to="/leaderboard" className="p-2 bg-yellow-50 text-yellow-600 rounded-full hover:bg-yellow-100 transition shadow-sm ml-1" title="Leaderboard">
                             <Trophy className="w-5 h-5" />
+                        </Link>
+
+                        {/* Store Link */}
+                        <Link to="/store" className="p-2 bg-green-50 text-green-600 rounded-full hover:bg-green-100 transition shadow-sm ml-1" title="Store">
+                            <ShoppingBag className="w-5 h-5" />
                         </Link>
         
                         {/* Profile Link */}

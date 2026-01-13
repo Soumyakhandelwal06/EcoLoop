@@ -221,6 +221,43 @@ async def verify_task(
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
+# --- Store Endpoints ---
+@app.get("/store/items", response_model=List[schemas.StoreItemSchema])
+def get_store_items(db: Session = Depends(database.get_db)):
+    return db.query(models.StoreItem).all()
+
+@app.post("/store/buy")
+def purchase_item(
+    request: schemas.PurchaseRequest,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    item = db.query(models.StoreItem).filter(models.StoreItem.id == request.item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    if current_user.coins < item.price:
+        raise HTTPException(status_code=400, detail="Insufficient EcoCoins")
+    
+    # Check if already owned (Except for consumable items if we add any, but these are goodies)
+    already_owned = db.query(models.UserItem).filter(
+        models.UserItem.user_id == current_user.id,
+        models.UserItem.item_id == item.id
+    ).first()
+    
+    if already_owned:
+        raise HTTPException(status_code=400, detail="You already own this item!")
+
+    # Deduct coins
+    current_user.coins -= item.price
+    
+    # Log purchase
+    user_item = models.UserItem(user_id=current_user.id, item_id=item.id)
+    db.add(user_item)
+    db.commit()
+    
+    return {"message": f"Successfully purchased {item.name}!", "new_balance": current_user.coins}
+
 # --- Seed Data Endpoint (For Demo) ---
 @app.post("/seed")
 def seed_data(db: Session = Depends(database.get_db)):
@@ -288,5 +325,19 @@ def seed_data(db: Session = Depends(database.get_db)):
             db_q = models.Question(level_id=db_level.id, **q)
             db.add(db_q)
     
+    # Seed Store Items
+    store_items = [
+        {"name": "Plant a Tree", "description": "We will plant a real tree in your name.", "price": 1000, "icon_type": "tree"},
+        {"name": "Eco-Warrior Hoodie", "description": "Virtual hoodie for your avatar.", "price": 500, "icon_type": "hoodie"},
+        {"name": "Reusable Bottle", "description": "Digital badge for your profile.", "price": 200, "icon_type": "bottle"},
+        {"name": "Waste Hero Badge", "description": "Rare gold profile badge.", "price": 300, "icon_type": "badge"},
+        {"name": "Coral Restorer", "description": "Help restore a coral reef.", "price": 1500, "icon_type": "water"},
+        {"name": "Solar Kit", "description": "Support renewable energy projects.", "price": 2000, "icon_type": "zap"},
+    ]
+    
+    for item in store_items:
+        db_item = models.StoreItem(**item)
+        db.add(db_item)
+
     db.commit()
-    return {"message": "Levels seeded successfully!"}
+    return {"message": "Levels and Store seeded successfully!"}

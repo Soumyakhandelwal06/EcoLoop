@@ -79,3 +79,18 @@ class ProgressUpdate(BaseModel):
     level_id: int
     coins_earned: int
     xp_earned: int
+
+# --- Store Schemas ---
+class StoreItemSchema(BaseModel):
+    id: int
+    name: str
+    description: str
+    price: int
+    icon_type: str
+    image_url: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class PurchaseRequest(BaseModel):
+    item_id: int

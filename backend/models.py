@@ -23,6 +23,7 @@ class User(Base):
 
     # Relationships
     progress = relationship("UserProgress", back_populates="user")
+    owned_items = relationship("UserItem", back_populates="user")
 
 class Level(Base):
     __tablename__ = "levels"
@@ -39,6 +40,28 @@ class Level(Base):
     # Relationships
     user_progress = relationship("UserProgress", back_populates="level")
     questions = relationship("Question", back_populates="level")
+
+class StoreItem(Base):
+    __tablename__ = "store_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
+    description = Column(String)
+    price = Column(Integer)
+    icon_type = Column(String) # 'badge', 'hoodie', 'bottle', 'tree'
+    image_url = Column(String, nullable=True)
+
+class UserItem(Base):
+    """Tracks which user has bought which store item"""
+    __tablename__ = "user_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    item_id = Column(Integer, ForeignKey("store_items.id"))
+    purchase_date = Column(Date, default=date.today)
+
+    user = relationship("User", back_populates="owned_items")
+    item = relationship("StoreItem")
 
 class Question(Base):
     __tablename__ = "questions"

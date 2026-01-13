@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import LevelView from './pages/LevelView';
 import Profile from './pages/Profile';
 import Leaderboard from './pages/Leaderboard';
+import Store from './pages/Store';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
             <Route path="/level/:id" element={<LevelView />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/store" element={<Store />} />
             
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
