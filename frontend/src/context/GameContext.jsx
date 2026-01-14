@@ -217,6 +217,34 @@ export const GameProvider = ({ children }) => {
             };
         }
     };
+    
+    const getChallenges = async () => {
+        try {
+            const res = await api.get('/challenges');
+            return res.data;
+        } catch (err) {
+            console.error("Fetch Challenges Failed", err);
+            return [];
+        }
+    };
+
+    const completeChallenge = async (challengeId, file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        try {
+            const res = await api.post(`/challenges/${challengeId}/complete`, formData);
+            // Refresh user to get new balance and streak
+            await fetchUser();
+            return { success: true, ...res.data };
+        } catch (err) {
+            console.error("Complete Challenge Failed", err);
+            return { 
+                success: false, 
+                message: err.response?.data?.detail || "Completion failed" 
+            };
+        }
+    };
 
     return (
         <GameContext.Provider value={{
@@ -233,6 +261,8 @@ export const GameProvider = ({ children }) => {
             fetchLeaderboard,
             getStoreItems,
             buyItem,
+            getChallenges,
+            completeChallenge,
             fetchUser // Expose fetchUser for manual refresh if needed
         }}>
             {children}

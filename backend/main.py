@@ -258,6 +258,112 @@ def purchase_item(
     
     return {"message": f"Successfully purchased {item.name}!", "new_balance": current_user.coins}
 
+# --- Challenge Endpoints ---
+@app.get("/challenges", response_model=List[schemas.ChallengeSchema])
+def get_challenges(db: Session = Depends(database.get_db), current_user: models.User = Depends(auth.get_current_user)):
+    challenges = db.query(models.Challenge).filter(models.Challenge.is_active == True).all()
+    
+    # Check completion for current user today
+    today = date.today()
+    results = []
+    for c in challenges:
+        is_completed = db.query(models.UserChallengeCompletion).filter(
+            models.UserChallengeCompletion.user_id == current_user.id,
+            models.UserChallengeCompletion.challenge_id == c.id,
+            models.UserChallengeCompletion.completion_date == today
+        ).first() is not None
+        
+        # For weekly, we might want to check if completed in the last 7 days, 
+        # but for simplicity of the prototype, let's stick to 'per day' or 'one-time' reset.
+        # However, the requirement says 'weekly', so let's check since last Monday for weekly.
+        if c.type == 'weekly':
+            # Simplified weekly: check if completed in current week (Sun-Sat)
+            start_of_week = today - timedelta(days=today.weekday())
+            is_completed = db.query(models.UserChallengeCompletion).filter(
+                models.UserChallengeCompletion.user_id == current_user.id,
+                models.UserChallengeCompletion.challenge_id == c.id,
+                models.UserChallengeCompletion.completion_date >= start_of_week
+            ).first() is not None
+
+        c_schema = schemas.ChallengeSchema.from_orm(c)
+        c_schema.is_completed = is_completed
+        results.append(c_schema)
+        
+    return results
+
+@app.post("/challenges/{challenge_id}/complete", response_model=schemas.ChallengeCompletionResponse)
+async def complete_challenge(
+    challenge_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    challenge = db.query(models.Challenge).filter(models.Challenge.id == challenge_id).first()
+    if not challenge:
+        raise HTTPException(status_code=404, detail="Challenge not found")
+    
+    today = date.today()
+    
+    # Check if already completed
+    if challenge.type == 'daily':
+        existing = db.query(models.UserChallengeCompletion).filter(
+            models.UserChallengeCompletion.user_id == current_user.id,
+            models.UserChallengeCompletion.challenge_id == challenge.id,
+            models.UserChallengeCompletion.completion_date == today
+        ).first()
+    else: # weekly
+        start_of_week = today - timedelta(days=today.weekday())
+        existing = db.query(models.UserChallengeCompletion).filter(
+            models.UserChallengeCompletion.user_id == current_user.id,
+            models.UserChallengeCompletion.challenge_id == challenge.id,
+            models.UserChallengeCompletion.completion_date >= start_of_week
+        ).first()
+
+    if existing:
+        raise HTTPException(status_code=400, detail="Challenge already completed!")
+
+    # --- AI Verification ---
+    temp_dir = "temp_uploads"
+    os.makedirs(temp_dir, exist_ok=True)
+    temp_path = os.path.join(temp_dir, f"challenge_{challenge_id}_{int(time.time())}_{file.filename}")
+    
+    try:
+        with open(temp_path, "wb") as buffer:
+            content = await file.read()
+            buffer.write(content)
+        
+        # Use verification_label from challenge
+        label = challenge.verification_label or challenge.title
+        verification = await ai_service.verify_task_content(temp_path, file.content_type, label)
+        
+        if not verification.get("is_valid"):
+             raise HTTPException(status_code=400, detail=f"Verification failed: {verification.get('message')}")
+             
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+    # Reward Coins
+    current_user.coins += challenge.coin_reward
+    
+    streak_incremented = False
+    if challenge.type == 'daily':
+        update_user_streak(current_user, db)
+        streak_incremented = True
+    
+    # Log Completion
+    completion = models.UserChallengeCompletion(user_id=current_user.id, challenge_id=challenge.id)
+    db.add(completion)
+    db.commit()
+    db.refresh(current_user)
+    
+    return {
+        "message": f"Challenge '{challenge.title}' Verified & Completed!",
+        "new_balance": current_user.coins,
+        "streak_incremented": streak_incremented,
+        "new_streak": current_user.streak
+    }
+
 # --- Seed Data Endpoint (For Demo) ---
 @app.post("/seed")
 def seed_data(db: Session = Depends(database.get_db)):
@@ -344,5 +450,16 @@ def seed_data(db: Session = Depends(database.get_db)):
         db_item = models.StoreItem(**item)
         db.add(db_item)
 
+    # Seed Challenges
+    challenges_data = [
+        {"title": "Nature Appreciation", "description": "Find a tree or plant and take a photo to show you appreciate nature!", "coin_reward": 50, "type": "daily", "verification_label": "tree, plant, green nature, leaves"},
+        {"title": "Water Saver", "description": "Limit your shower to 5 minutes.", "coin_reward": 50, "type": "daily", "verification_label": "shower timer or water saving fixture"},
+        {"title": "Weekly Cleanup", "description": "Clean up a local park or street for 1 hour.", "coin_reward": 250, "type": "weekly", "verification_label": "person collecting trash outdoors with a bag"},
+        {"title": "Vegetarian Week", "description": "Eat no meat for a full week.", "coin_reward": 500, "type": "weekly", "verification_label": "vegetarian meal without any meat"},
+    ]
+    for c in challenges_data:
+        db_challenge = models.Challenge(**c)
+        db.add(db_challenge)
+
     db.commit()
-    return {"message": "Levels and Store seeded successfully!"}
+    return {"message": "Levels, Store, and Challenges seeded successfully!"}

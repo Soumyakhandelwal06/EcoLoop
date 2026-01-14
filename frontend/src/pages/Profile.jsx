@@ -2,6 +2,7 @@ import React from 'react';
 import Header from '../components/common/Header';
 import { Award, Droplets, Zap, Recycle, Leaf } from 'lucide-react';
 import { useGame } from '../context/GameContext';
+import { getUserRank } from '../utils/gameUtils';
 
 const Profile = () => {
     const { user } = useGame();
@@ -21,7 +22,7 @@ const Profile = () => {
     // Use real user object (preserving badge structure for map)
     const profileData = {
         name: user.username,
-        rank: user.coins > 500 ? "Eco Warrior" : "Eco Scout",
+        rank: getUserRank(user),
         level: maxLevel,
         coins: user.coins,
         badges: dynamicBadges

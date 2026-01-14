@@ -25,6 +25,7 @@ class User(Base):
     # Relationships
     progress = relationship("UserProgress", back_populates="user")
     owned_items = relationship("UserItem", back_populates="user")
+    challenge_completions = relationship("UserChallengeCompletion", back_populates="user")
 
 class Level(Base):
     __tablename__ = "levels"
@@ -93,3 +94,26 @@ class UserProgress(Base):
     # Relationships
     user = relationship("User", back_populates="progress")
     level = relationship("Level", back_populates="user_progress")
+
+
+class Challenge(Base):
+    __tablename__ = "challenges"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String)
+    description = Column(String)
+    coin_reward = Column(Integer, default=50)
+    type = Column(String) # 'daily', 'weekly'
+    is_active = Column(Boolean, default=True)
+    verification_label = Column(String, nullable=True) # AI tag
+
+class UserChallengeCompletion(Base):
+    __tablename__ = "user_challenge_completions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    challenge_id = Column(Integer, ForeignKey("challenges.id"))
+    completion_date = Column(Date, default=date.today)
+
+    user = relationship("User", back_populates="challenge_completions")
+    challenge = relationship("Challenge")
