@@ -327,13 +327,18 @@ def seed_data(db: Session = Depends(database.get_db)):
     
     # Seed Store Items
     store_items = [
-        {"name": "Plant a Tree", "description": "We will plant a real tree in your name.", "price": 1000, "icon_type": "tree"},
-        {"name": "Eco-Warrior Hoodie", "description": "Virtual hoodie for your avatar.", "price": 500, "icon_type": "hoodie"},
-        {"name": "Reusable Bottle", "description": "Digital badge for your profile.", "price": 200, "icon_type": "bottle"},
-        {"name": "Waste Hero Badge", "description": "Rare gold profile badge.", "price": 300, "icon_type": "badge"},
-        {"name": "Coral Restorer", "description": "Help restore a coral reef.", "price": 1500, "icon_type": "water"},
-        {"name": "Solar Kit", "description": "Support renewable energy projects.", "price": 2000, "icon_type": "zap"},
+        {"name": "Plant a Tree", "description": "We will plant a real tree in your name.", "price": 1000, "icon_type": "tree", "category": "Symbolic", "image_url": "/images/store/tree.png"},
+        {"name": "Eco-Warrior Hoodie", "description": "Virtual hoodie for your avatar.", "price": 500, "icon_type": "hoodie", "category": "Premium", "image_url": "/images/store/hoodie.png"},
+        {"name": "Reusable Bottle", "description": "Digital badge for your profile.", "price": 200, "icon_type": "bottle", "category": "Virtual", "image_url": "/images/store/bottle.png"},
+        {"name": "Waste Hero Badge", "description": "Rare gold profile badge.", "price": 300, "icon_type": "badge", "category": "Premium", "image_url": "/images/store/badge.png"},
+        {"name": "Coral Restorer", "description": "Help restore a coral reef.", "price": 1500, "icon_type": "water", "category": "Symbolic", "image_url": "/images/store/coral.png"},
+        {"name": "Solar Kit", "description": "Support renewable energy projects.", "price": 2000, "icon_type": "zap", "category": "Premium", "image_url": "/images/store/solar.png"},
+        {"name": "Watercolor Set", "description": "Professional 3D watercolor paints for eco-art.", "price": 450, "icon_type": "palette", "category": "Student", "image_url": "/images/store/watercolor.png"},
+        {"name": "Eco Sticker Pack", "description": "Fun stickers to spread the green message.", "price": 150, "icon_type": "sticker", "category": "Student", "image_url": "/images/store/stickers.png"},
+        {"name": "Bio-Geometry Box", "description": "Sleek, transparent, and eco-friendly geometry kit.", "price": 600, "icon_type": "box", "category": "Student", "image_url": "/images/store/geometry_box.png"},
+        {"name": "Recycled Notebooks", "description": "A set of premium recycled paper notebooks.", "price": 350, "icon_type": "book", "category": "Student", "image_url": "/images/store/notebooks.png"},
     ]
+
     
     for item in store_items:
         db_item = models.StoreItem(**item)

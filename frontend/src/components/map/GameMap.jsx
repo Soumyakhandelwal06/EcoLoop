@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import MapNode from './MapNode';
 import { useGame } from '../../context/GameContext';
+import { motion } from 'framer-motion';
 import { 
     Cloud, Trees, Mountain, Building2, Waves, Rocket, 
     Bird, Fish, Ship, Car, Tent, Flower, Star, Sun, Moon 
@@ -235,12 +236,17 @@ const GameMap = () => {
             </div>
             
             {/* Start Button aligned with Level 1 */}
-             <div 
-                onClick={handleStartAdventure}
-                className="absolute transform -translate-x-1/2 bg-white px-8 py-3 rounded-full shadow-[0_0_30px_rgba(34,197,94,0.4)] border-4 border-green-500 text-green-700 font-extrabold text-lg tracking-widest flex items-center gap-2 animate-bounce z-30 hover:scale-105 transition cursor-pointer"
-                style={{ left: '50%', top: '97%' }}
-             >
-                <span>START ADVENTURE</span>
+             <div className="absolute bottom-10 left-0 w-full flex justify-center z-30 pointer-events-none">
+                 <motion.div 
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleStartAdventure}
+                    className="pointer-events-auto bg-white px-10 py-4 rounded-full shadow-[0_0_40px_rgba(34,197,94,0.5)] border-4 border-green-500 text-green-700 font-[900] text-xl tracking-widest flex items-center gap-2 animate-bounce transition cursor-pointer"
+                 >
+                    <span>START ADVENTURE</span>
+                 </motion.div>
              </div>
         </div>
     );

@@ -87,6 +87,7 @@ class StoreItemSchema(BaseModel):
     description: str
     price: int
     icon_type: str
+    category: str
     image_url: Optional[str] = None
 
     class Config:

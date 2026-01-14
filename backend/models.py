@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Enum, Date
 from sqlalchemy.orm import relationship
 import enum
+from datetime import date
 from .database import Base
 
 # Enum for Level Status
@@ -49,6 +50,7 @@ class StoreItem(Base):
     description = Column(String)
     price = Column(Integer)
     icon_type = Column(String) # 'badge', 'hoodie', 'bottle', 'tree'
+    category = Column(String, default="Virtual") # 'Symbolic', 'Premium', 'Virtual'
     image_url = Column(String, nullable=True)
 
 class UserItem(Base):
